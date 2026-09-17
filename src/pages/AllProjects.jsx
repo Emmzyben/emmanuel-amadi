@@ -39,7 +39,8 @@ const AllProjects = () => {
                         return { ...p, category_name: c.name || '', category_slug: c.slug || '' };
                     });
 
-                    projsData.sort((a, b) => new Date(b.created_at || Date.now()) - new Date(a.created_at || Date.now()));
+                    // Sort by created_at asc (oldest first, newest last)
+                    projsData.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
                     setProjects(projsData);
                 }
             } catch (error) {
