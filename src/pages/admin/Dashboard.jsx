@@ -94,51 +94,82 @@ const AdminLayout = () => {
 
 const DashboardHome = () => {
     const { currentUser } = useAuth();
-    
+    const [stats, setStats] = useState({ projects: null, requests: null, reviews: null });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const { ref, get } = await import('firebase/database');
+                const { db } = await import('../../config/firebase');
+
+                const [projSnap, reqSnap, revSnap] = await Promise.all([
+                    get(ref(db, 'projects')),
+                    get(ref(db, 'requests')),
+                    get(ref(db, 'reviews')),
+                ]);
+
+                setStats({
+                    projects: projSnap.exists() ? Object.keys(projSnap.val()).length : 0,
+                    requests: reqSnap.exists() ? Object.keys(reqSnap.val()).length : 0,
+                    reviews: revSnap.exists() ? Object.keys(revSnap.val()).length : 0,
+                });
+            } catch (error) {
+                console.error('Error fetching dashboard stats', error);
+            }
+        };
+
+        fetchStats();
+    }, []);
+
+    const StatCard = ({ title, icon, color, bg, value, label }) => (
+        <div className="col-md-4">
+            <div className="glass-card h-100">
+                <div className="d-flex align-items-center justify-content-between mb-4">
+                    <h5 className="m-0" style={{color: '#222', fontWeight: '600'}}>{title}</h5>
+                    <div className="rounded p-2" style={{background: bg, color}}>
+                        <i className={`fa ${icon}`}></i>
+                    </div>
+                </div>
+                <h2 className="display-4 fw-bold mb-2" style={{color: '#222'}}>
+                    {value === null ? <span style={{fontSize: '1.5rem', opacity: 0.4}}>Loading…</span> : value}
+                </h2>
+                <p style={{color: '#666', fontSize: '0.9rem'}}>{label}</p>
+            </div>
+        </div>
+    );
+
     return (
         <div>
             <h1 className="admin-title">Dashboard Overview</h1>
             <p style={{color: '#555', fontSize: '1.1rem', marginBottom: '40px'}}>
                 Welcome back, <strong>{currentUser.username}</strong>! Here is what's happening today.
             </p>
-            
+
             <div className="row g-4">
-                <div className="col-md-4">
-                    <div className="glass-card h-100">
-                        <div className="d-flex align-items-center justify-content-between mb-4">
-                            <h5 className="m-0" style={{color: '#222', fontWeight: '600'}}>Projects</h5>
-                            <div className="rounded p-2" style={{background: 'rgba(255, 111, 97, 0.15)', color: '#FF6F61'}}>
-                                <i className="fa fa-briefcase"></i>
-                            </div>
-                        </div>
-                        <h2 className="display-4 fw-bold mb-2" style={{color: '#222'}}>--</h2>
-                        <p style={{color: '#666', fontSize: '0.9rem'}}>Total portfolio items</p>
-                    </div>
-                </div>
-                <div className="col-md-4">
-                    <div className="glass-card h-100">
-                        <div className="d-flex align-items-center justify-content-between mb-4">
-                            <h5 className="m-0" style={{color: '#222', fontWeight: '600'}}>Messages</h5>
-                            <div className="rounded p-2" style={{background: 'rgba(3, 196, 235, 0.15)', color: '#03C4EB'}}>
-                                <i className="fa fa-envelope"></i>
-                            </div>
-                        </div>
-                        <h2 className="display-4 fw-bold mb-2" style={{color: '#222'}}>--</h2>
-                        <p style={{color: '#666', fontSize: '0.9rem'}}>Contact requests</p>
-                    </div>
-                </div>
-                <div className="col-md-4">
-                    <div className="glass-card h-100">
-                        <div className="d-flex align-items-center justify-content-between mb-4">
-                            <h5 className="m-0" style={{color: '#222', fontWeight: '600'}}>Reviews</h5>
-                            <div className="rounded p-2" style={{background: 'rgba(246, 209, 85, 0.3)', color: '#d97706'}}>
-                                <i className="fa fa-star"></i>
-                            </div>
-                        </div>
-                        <h2 className="display-4 fw-bold mb-2" style={{color: '#222'}}>--</h2>
-                        <p style={{color: '#666', fontSize: '0.9rem'}}>Client testimonials</p>
-                    </div>
-                </div>
+                <StatCard
+                    title="Projects"
+                    icon="fa-briefcase"
+                    color="#FF6F61"
+                    bg="rgba(255, 111, 97, 0.15)"
+                    value={stats.projects}
+                    label="Total portfolio items"
+                />
+                <StatCard
+                    title="Messages"
+                    icon="fa-envelope"
+                    color="#03C4EB"
+                    bg="rgba(3, 196, 235, 0.15)"
+                    value={stats.requests}
+                    label="Contact requests"
+                />
+                <StatCard
+                    title="Reviews"
+                    icon="fa-star"
+                    color="#d97706"
+                    bg="rgba(246, 209, 85, 0.3)"
+                    value={stats.reviews}
+                    label="Client testimonials"
+                />
             </div>
         </div>
     );
